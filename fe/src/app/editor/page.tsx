@@ -1,29 +1,39 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useTheme } from 'next-themes'
-import { Button } from "@/components/ui/button"
-import { Sun, Moon } from 'lucide-react'
-import { CodeEditor } from '@/components/editor'
-import { FileExplorer } from '@/components/file-explorer'
-import { Steps } from '@/components/steps'
-import { Preview } from '@/components/preview'
+import { useState } from 'react';
+import { Steps } from '@/components/steps';
+import { FileExplorer } from '@/components/file-explorer';
+import { FileNode } from '@/lib/utils';
+import { CodeEditor } from '@/components/editor';
+import { Preview } from '@/components/preview';
+import { Button } from '@/components/ui/button';
 
-export default function EditorPage() {
-  const [view, setView] = useState<'code' | 'preview'>('code')
-  const { theme, setTheme } = useTheme()
-  const [selectedFile, setSelectedFile] = useState<string | null>(null)
+interface EditorPageProps {
+  steps: string[];
+  fileStructure: FileNode[];
+}
+
+export default function EditorPage({ steps, fileStructure }: EditorPageProps) {
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [fileContent, setFileContent] = useState<string | null>(null);
+  const [view, setView] = useState<'code' | 'preview'>('code');
+
+  const handleFileSelect = (filePath: string, content: string | undefined) => {
+    setSelectedFile(filePath);
+    console.log('filePath in handleFileSelect', filePath);
+    
+    console.log('content in handleFileSelect', content);
+    
+    setFileContent(content || '');
+  };
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Steps Sidebar */}
       <div className="w-1/5 border-r border-border">
-        <Steps />
+        <Steps steps={steps} />
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        {/* Header */}
         <header className="h-14 border-b border-border px-4 flex items-center justify-between">
           <div className="flex gap-2">
             <Button
@@ -41,23 +51,14 @@ export default function EditorPage() {
               Preview
             </Button>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          >
-            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </Button>
         </header>
-
-        {/* Content */}
         <div className="flex-1 flex">
           <div className="w-64 border-r border-border">
-            <FileExplorer onFileSelect={setSelectedFile} />
+            <FileExplorer fileStructure={fileStructure} onFileSelect={handleFileSelect} />
           </div>
           <div className="flex-1">
             {view === 'code' ? (
-              <CodeEditor file={selectedFile} />
+              <CodeEditor content={fileContent} />
             ) : (
               <Preview />
             )}
@@ -65,6 +66,5 @@ export default function EditorPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-

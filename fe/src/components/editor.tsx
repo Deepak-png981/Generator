@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import { useTheme } from 'next-themes'
-import { Editor as MonacoEditor } from '@monaco-editor/react'
+import { useTheme } from 'next-themes';
+import { Editor as MonacoEditor } from '@monaco-editor/react';
 
 interface CodeEditorProps {
-  file: string | null
+  content: string | null;
 }
 
-export function CodeEditor({ file }: CodeEditorProps) {
-  const { theme } = useTheme()
+export function CodeEditor({ content }: { content: string | null }) {
+  const { theme } = useTheme();
 
   return (
     <div className="h-full w-full">
@@ -24,10 +24,15 @@ export function CodeEditor({ file }: CodeEditorProps) {
           scrollBeyondLastLine: false,
           readOnly: false,
           automaticLayout: true,
+          quickSuggestions: false,
+          suggestOnTriggerCharacters: false,
+          snippetSuggestions: 'none',
+          wordBasedSuggestions: 'off',
+          tabCompletion: 'off',
+          acceptSuggestionOnEnter: 'off',
         }}
-        value={file ? '// Loading...' : '// Select a file to edit'}
+        value={content || '// Loading...'}
       />
     </div>
-  )
+  );
 }
-

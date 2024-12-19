@@ -1,21 +1,28 @@
-'use client'
-import { useState } from 'react'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { useRouter } from 'next/navigation'
-import { SERVER_BASE_URL } from '@/constants/urls'
+'use client';
 
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { SERVER_BASE_URL } from '@/constants/urls';
+import { parseUIPrompts, FileNode } from '@/lib/utils';
+import EditorPage from './editor/page';
 
 export default function LandingPage() {
-  const [prompt, setPrompt] = useState('')
-  const router = useRouter()
+  const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
+  const [responseData, setResponseData] = useState<{
+    steps: string[];
+    fileStructure: FileNode[];
+  } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
 
     setLoading(true);
+    setError(null);
+
     try {
       const response = await fetch(`${SERVER_BASE_URL}/target`, {
         method: 'POST',
@@ -30,17 +37,21 @@ export default function LandingPage() {
       }
 
       const data = await response.json();
-      console.log('Prompts:', data.prompts);
-      console.log('UI Prompts:', data.uiPrompts);
+      const uiPrompts = data.uiPrompts?.[0];
+      const { steps, fileStructure } = parseUIPrompts(uiPrompts);
 
-      // Example navigation (if needed)
-      router.push(`/editor?prompt=${encodeURIComponent(prompt)}`);
-    } catch (error) {
+      setResponseData({ steps, fileStructure });
+    } catch (error: any) {
       console.error('Error submitting prompt:', error);
+      setError(error.message || 'An unexpected error occurred.');
     } finally {
       setLoading(false);
     }
   };
+
+  if (responseData) {
+    return <EditorPage steps={responseData.steps} fileStructure={responseData.fileStructure} />;
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
@@ -55,11 +66,15 @@ export default function LandingPage() {
             onChange={(e) => setPrompt(e.target.value)}
             placeholder="Describe your web app..."
             className="flex-1"
+            disabled={loading}
           />
-          <Button type="submit">Generate</Button>
+          <Button type="submit" disabled={loading}>
+            {loading ? 'Generating...' : 'Generate'}
+          </Button>
         </form>
+
+        {error && <p className="text-red-500 mt-4">{error}</p>}
       </div>
     </div>
-  )
+  );
 }
-
