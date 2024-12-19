@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Steps } from '@/components/steps';
 import { FileExplorer } from '@/components/file-explorer';
 import { FileNode } from '@/lib/utils';
@@ -18,12 +18,16 @@ export default function EditorPage({ steps, fileStructure }: EditorPageProps) {
   const [fileContent, setFileContent] = useState<string | null>(null);
   const [view, setView] = useState<'code' | 'preview'>('code');
 
+  useEffect(() => {
+    if (fileStructure.length > 0 && !selectedFile) {
+      const firstFile = fileStructure[0];
+      setSelectedFile(firstFile.name || null);
+      setFileContent(firstFile.content || '');
+    }
+  }, [fileStructure, selectedFile]);
+
   const handleFileSelect = (filePath: string, content: string | undefined) => {
     setSelectedFile(filePath);
-    console.log('filePath in handleFileSelect', filePath);
-    
-    console.log('content in handleFileSelect', content);
-    
     setFileContent(content || '');
   };
 
