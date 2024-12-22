@@ -4,8 +4,9 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SERVER_BASE_URL } from '@/constants/urls';
-import { parseUIPrompts, FileNode } from '@/lib/utils';
+import { parseUIPrompts, FileNode, mergeFileStructures } from '@/lib/utils';
 import EditorPage from './editor/page';
+import { streamChatAPI } from './APIs/chat';
 
 export default function LandingPage() {
   const [prompt, setPrompt] = useState('');
@@ -38,9 +39,18 @@ export default function LandingPage() {
 
       const data = await response.json();
       const uiPrompts = data.uiPrompts?.[0];
+      const pormptToLLM = data.prompts?.[0];
       const { steps, fileStructure } = parseUIPrompts(uiPrompts);
+      const {llmSteps , llmFileStructure} = await streamChatAPI(prompt + '\n' + pormptToLLM)
+      console.log('llmsteps : ', llmSteps);
+      console.log('llmFileStructure : ', llmFileStructure);
+      const mergedSteps = [...steps, ...llmSteps];
+      const mergedFileStructure = mergeFileStructures(fileStructure, llmFileStructure);
 
-      setResponseData({ steps, fileStructure });
+      console.log('mergedFileStructure : ', mergedFileStructure);
+      
+
+      setResponseData({ steps: mergedSteps, fileStructure: mergedFileStructure });
     } catch (error: any) {
       console.error('Error submitting prompt:', error);
       setError(error.message || 'An unexpected error occurred.');

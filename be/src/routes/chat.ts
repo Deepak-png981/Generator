@@ -13,7 +13,8 @@ const openai = new OpenAI({
 router.post('/chat', async (req: Request, res: Response) => {
   try {
     const { prompt } = req.body;
-
+    console.log('prompt', prompt);
+    
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
@@ -30,18 +31,10 @@ router.post('/chat', async (req: Request, res: Response) => {
           content: getSystemPrompt(),
         },
         { role: 'user', content: prompt },
-      ],
-      stream: true,
+      ]
     });
-
-    for await (const part of completion) {
-      const content = part.choices[0].delta?.content;
-      if (content) {
-        res.write(`data: ${content}\n\n`);
-      }
-    }
-
-    return res.end() as any;
+    console.log('completion , ', completion.choices[0].message.content);
+    return res.json({ chat: completion.choices[0].message.content }) as any;
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({
@@ -79,8 +72,7 @@ router.post('/target', async (req: Request, res: Response) => {
     if (answer === 'react') {
       return res.json({
         prompts: [
-          BASE_PROMPT,
-          `Here is an artifact that contains all files of the project visible to you.\nConsider the contents of ALL files in the project.\n\n${reactBasePrompt}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  - .gitignore\n  - package-lock.json\n`,
+          `${BASE_PROMPT} \n Here is an artifact that contains all files of the project visible to you.\nConsider the contents of ALL files in the project.\n\n${reactBasePrompt}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  - .gitignore\n  - package-lock.json\n`
         ],
         uiPrompts: [reactBasePrompt],
       });
@@ -89,8 +81,7 @@ router.post('/target', async (req: Request, res: Response) => {
     if (answer === 'node') {
       return res.json({
         prompts: [
-          BASE_PROMPT,
-          `Here is an artifact that contains all files of the project visible to you.\nConsider the contents of ALL files in the project.\n\n${nodeBasePrompt}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  - .gitignore\n  - package-lock.json\n`,
+          `${BASE_PROMPT} \n Here is an artifact that contains all files of the project visible to you.\nConsider the contents of ALL files in the project.\n\n${nodeBasePrompt}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  - .gitignore\n  - package-lock.json\n`,
         ],
         uiPrompts: [nodeBasePrompt],
       });

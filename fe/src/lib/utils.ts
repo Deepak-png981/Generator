@@ -22,9 +22,15 @@ export function parseUIPrompts(uiPrompt: string): { steps: string[]; fileStructu
   let match;
   while ((match = boltActionRegex.exec(uiPrompt)) !== null) {
     const filePath = match[1];
-    const content = match[2];
+    let content = match[2].trim();
+    if (content.startsWith('```') && content.endsWith('```')) {
+      const firstNewlineIndex = content.indexOf('\n');
+      if (firstNewlineIndex !== -1) {
+        content = content.substring(firstNewlineIndex + 1, content.length - 3).trim();
+      }
+    }
 
-    steps.push(`Created file: ${filePath}`);
+    steps.push(`Created or updated file: ${filePath}`);
 
     const parts = filePath.split('/');
     let current = fileStructure;
@@ -41,6 +47,8 @@ export function parseUIPrompts(uiPrompt: string): { steps: string[]; fileStructu
           ...(isFile && { content }),
         };
         current.push(node);
+      } else if (isFile) {
+        node.content = content;
       }
 
       if (!isFile && !node.children) {
@@ -52,4 +60,29 @@ export function parseUIPrompts(uiPrompt: string): { steps: string[]; fileStructu
   }
 
   return { steps, fileStructure };
+}
+
+
+export const mergeFileStructures = (structure1: FileNode[], structure2: FileNode[]): FileNode[] => {
+  const merged: Record<string, FileNode> = {};
+
+  const addToMerged = (node: FileNode, basePath: string = '') => {
+    const path = `${basePath}/${node.name}`;
+    if (merged[path]) {
+      if (node.type === 'folder' && merged[path].type === 'folder') {
+        merged[path].children = mergeFileStructures(
+          merged[path].children || [],
+          node.children || []
+        );
+      } else if (node.type === 'file') {
+        merged[path].content = node.content;
+      }
+    } else {
+      merged[path] = { ...node };
+    }
+  };
+
+  [...structure1, ...structure2].forEach((node) => addToMerged(node));
+
+  return Object.values(merged);
 }
